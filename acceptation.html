@@ -51,30 +51,30 @@
         qr_code     : qrCodeBase64
       });
     }
-    
-    async function envoyerEmailrejet(nom){
+
+     async function envoyerEmailrejet(nom){
       await emailjs.send("service_qog2crg", "template_xjkk1pw", {
         nom         : nom,
       });
     }
+    // ── Envoyer Telegram via notre fonction Cloudflare (pas de corsproxy) ──
+    async function envoyerTelegram(nom, type, montant, codeTicket) {
+      const message = `✅ Ticket confirmé !\n👤 ${nom}\n🎟️ ${type}\n💰 ${Number(montant).toLocaleString('fr-FR')} FCFA\n🔑 ${codeTicket}`;
+      const users = ['@Hassan_111111111111', '@KYM_999'];
+      for (const user of users) {
+        try {
+          await fetch('/telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user, text: message })
+          });
+        } catch(e) {
+          console.log(`Telegram échoué pour ${user} mais on continue`, e);
+        }
+      }
+    }
 
-
-    // ── Envoyer Telegram ──
-  async function envoyerTelegram(nom, type, montant, codeTicket) {
-  const message = `✅ Ticket confirmé !\n👤 ${nom}\n🎟️ ${type}\n💰 ${Number(montant).toLocaleString('fr-FR')} FCFA\n🔑 ${codeTicket}`;
-
-  const url1 = `https://api.callmebot.com/text.php?user=KYM_999&text=${encodeURIComponent(message)}`;
-  const url2 = `https://api.callmebot.com/text.php?user=Hassan_111111111111&text=${encodeURIComponent(message)}`;
-
-  try {
-    await fetch(`https://corsproxy.io/?${encodeURIComponent(url1)}`);
-    await fetch(`https://corsproxy.io/?${encodeURIComponent(url2)}`);
-  } catch(e) {
-    console.log("Telegram échoué mais on continue");
-  }
-}
-
-    // ── Confirmer un ticket ── 
+    // ── Confirmer un ticket ──
     window.confirmerTicket = async function(codeTicket, btnEl) {
       btnEl.textContent = '⏳ Envoi...';
       btnEl.disabled = true;
@@ -97,7 +97,7 @@
     };
 
     // ── Rejeter un ticket ──
-    window.rejeterTicket = async function(codeTicket, btnEl) {
+     window.rejeterTicket = async function(codeTicket, btnEl) {
       if (!confirm(`Rejeter le ticket ${codeTicket} ?`)) return;
       btnEl.disabled = true;
       const card    = document.getElementById('card-' + codeTicket);
