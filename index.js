@@ -1,10 +1,6 @@
 // ============================================================
 //  src/index.js
 //  Worker principal pour intheroomsociety
-//
-//  Ce script fait 2 choses :
-//  1. Si l'URL est /telegram → appelle CallMeBot (proxy serveur)
-//  2. Sinon → sert les fichiers statiques du site (HTML, CSS, JS, images...)
 // ============================================================
 
 export default {
@@ -13,8 +9,21 @@ export default {
 
     // ── ROUTE 1 : /telegram → proxy vers CallMeBot ──
     if (url.pathname === '/telegram') {
+      
+      // Configuration des en-têtes CORS pour autoriser ton site à interroger le Worker
+      const corsHeaders = {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*", // Permet les requêtes depuis n'importe quel domaine (indispensable si ton admin.html est sur Pages)
+        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+      };
 
-      // Méthode POST (utilisée par admin.html)
+      // Gérer la requête de pré-vérification (OPTIONS) envoyée automatiquement par les navigateurs
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { headers: corsHeaders });
+      }
+
+      // Méthode POST (utilisée par acceptation.html)
       if (request.method === 'POST') {
         try {
           const { user, text } = await request.json();
@@ -22,7 +31,7 @@ export default {
           if (!user || !text) {
             return new Response(
               JSON.stringify({ success: false, error: "Paramètres 'user' et 'text' requis" }),
-              { status: 400, headers: { "Content-Type": "application/json" } }
+              { status: 400, headers: corsHeaders }
             );
           }
 
@@ -32,19 +41,18 @@ export default {
 
           return new Response(
             JSON.stringify({ success: true, result: resultatTexte }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
+            { status: 200, headers: corsHeaders }
           );
 
         } catch (err) {
           return new Response(
             JSON.stringify({ success: false, error: err.message }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
+            { status: 500, headers: corsHeaders }
           );
         }
       }
 
       // Méthode GET → pour tester facilement dans le navigateur
-      // Exemple : /telegram?user=@KYM_999&text=Test
       if (request.method === 'GET') {
         const user = url.searchParams.get('user');
         const text = url.searchParams.get('text');
@@ -52,7 +60,7 @@ export default {
         if (!user || !text) {
           return new Response(
             "Utilisation : /telegram?user=@TonPseudo&text=TonMessage",
-            { status: 400 }
+            { status: 400, headers: corsHeaders }
           );
         }
 
@@ -60,11 +68,14 @@ export default {
         const reponse = await fetch(apiUrl);
         const resultatTexte = await reponse.text();
 
-        return new Response(resultatTexte, { status: 200 });
+        return new Response(resultatTexte, { 
+          status: 200, 
+          headers: { "Content-Type": "text/html; charset=utf-8", ...corsHeaders } 
+        });
       }
     }
 
-    // ── ROUTE 2 : Tout le reste → servir les fichiers statiques (accueil.html, paie.html, images...) ──
+    // ── ROUTE 2 : Tout le reste → servir les fichiers statiques (accueil.html, images...) ──
     return env.ASSETS.fetch(request);
   }
 };

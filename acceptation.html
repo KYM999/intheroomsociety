@@ -58,12 +58,17 @@
       });
     }
     // ── Envoyer Telegram via notre fonction Cloudflare (pas de corsproxy) ──
+   // ── Envoyer Telegram via notre fonction Cloudflare Worker ──
     async function envoyerTelegram(nom, type, montant, codeTicket) {
       const message = `✅ Ticket confirmé !\n👤 ${nom}\n🎟️ ${type}\n💰 ${Number(montant).toLocaleString('fr-FR')} FCFA\n🔑 ${codeTicket}`;
       const users = ['@Hassan_111111111111', '@KYM_999'];
+      
+      // ⚠️ METS ICI L'URL DE TON WORKER CLOUDFLARE (ex: https://mon-worker.mon-pseudo.workers.dev/telegram)
+      const WORKER_URL = 'https://intheroomsociety.kym999.workers.dev/telegram';
+
       for (const user of users) {
         try {
-          await fetch('/telegram', {
+          await fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user, text: message })
