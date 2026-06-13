@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — INTHEROOM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <link rel="icon" type="image/png" href="images/logo_transparent.png">
+  <script>emailjs.init("UQxfGpqKQkyTontXz");</script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey           : "AIzaSyDuGETE1ZGIg8tC8Ytl3FXr7KKI8CNzco4",
+      authDomain       : "intheroom-tickets.firebaseapp.com",
+      databaseURL      : "https://intheroom-tickets-default-rtdb.firebaseio.com",
+      projectId        : "intheroom-tickets",
+      storageBucket    : "intheroom-tickets.firebasestorage.app",
+      messagingSenderId: "1010825112044",
+      appId            : "1:1010825112044:web:a86452f04f28a4d8d5b8c9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // ── Stockage global de TOUS les tickets (mis à jour par Firebase) ──
+    // Permet de filtrer/compter sans dépendre du DOM
+    let tousLesTickets = {};
+    let filtreActif    = 'en_attente';
+
+    // ── Générer QR code ──
+    async function genererQRCode(codeTicket) {
+      const canvas = document.createElement('canvas');
+      await QRCode.toCanvas(canvas, codeTicket, { width: 256 });
+      return canvas.toDataURL('image/png');
+    }
+
+    // ── Envoyer email ──
+    async function envoyerEmail(nom, email, codeTicket, montant) {
+      const qrCodeBase64 = await genererQRCode(codeTicket);
+      await emailjs.send("service_qog2crg", "template_yn773jr", {
+        nom         : nom,
+        email_client: email,
+        code_ticket : codeTicket,
+        montant     : Number(montant).toLocaleString('fr-FR'),
+        date        : new Date().toLocaleString('fr-FR'),
+        qr_code     : qrCodeBase64
+      });
+    }
+    
+    async function envoyerEmailrejet(nom){
+      await emailjs.send("service_qog2crg", "template_xjkk1pw", {
+        nom         : nom,
+      });
+    }
+
+
+    // ── Envoyer Telegram ──
+  async function envoyerTelegram(nom, type, montant, codeTicket) {
+  const message = `✅ Ticket confirmé !\n👤 ${nom}\n🎟️ ${type}\n💰 ${Number(montant).toLocaleString('fr-FR')} FCFA\n🔑 ${codeTicket}`;
+
+  const url1 = `https://api.callmebot.com/text.php?user=KYM_999&text=${encodeURIComponent(message)}`;
+  const url2 = `https://api.callmebot.com/text.php?user=Hassan_111111111111&text=${encodeURIComponent(message)}`;
+
+  try {
+    await fetch(`https://corsproxy.io/?${encodeURIComponent(url1)}`);
+    await fetch(`https://corsproxy.io/?${encodeURIComponent(url2)}`);
+  } catch(e) {
+    console.log("Telegram échoué mais on continue");
+  }
+}
+
+    // ── Confirmer un ticket ── 
+    window.confirmerTicket = async function(codeTicket, btnEl) {
+      btnEl.textContent = '⏳ Envoi...';
+      btnEl.disabled = true;
+      const card    = document.getElementById('card-' + codeTicket);
+      const nom     = card.dataset.nom;
+      const email   = card.dataset.email;
+      const type    = card.dataset.type;
+      const montant = card.dataset.montant;
+      try {
+        await envoyerEmail(nom, email, codeTicket, montant);
+        await envoyerTelegram(nom, type, montant, codeTicket);
+        await update(ref(db, 'tickets/' + codeTicket), { statut_demande: 'confirmé' });
+        // Firebase onValue va se redéclencher automatiquement → re-render
+      } catch(err) {
+        console.error(err);
+        btnEl.textContent = '❌ Erreur — Réessayer';
+        btnEl.disabled = false;
+        alert('Erreur : ' + err.message);
+      }
+    };
+
+    // ── Rejeter un ticket ──
+    window.rejeterTicket = async function(codeTicket, btnEl) {
+      if (!confirm(`Rejeter le ticket ${codeTicket} ?`)) return;
+      btnEl.disabled = true;
+      const card    = document.getElementById('card-' + codeTicket);
+      const nom     = card.dataset.nom; 
+      await update(ref(db, 'tickets/' + codeTicket), { statut_demande: 'rejeté' });
+       await envoyerEmailrejet(nom);
+      // Firebase onValue va se redéclencher automatiquement → re-render
+    };
+
+    // ── Mettre à jour les compteurs depuis tousLesTickets (pas depuis le DOM) ──
+    function updateCompteurs() {
+      const liste     = Object.values(tousLesTickets);
+      const attente   = liste.filter(t => t.statut_demande === 'en_attente').length;
+      const confirmes = liste.filter(t => t.statut_demande === 'confirmé').length;
+      const rejetes   = liste.filter(t => t.statut_demande === 'rejeté').length;
+      document.getElementById('count-attente').textContent  = attente;
+      document.getElementById('count-confirme').textContent = confirmes;
+      document.getElementById('count-rejete').textContent   = rejetes;
+    }
+
+    // ── Rendre la grille selon le filtre actif ──
+    function renderGrille() {
+      const grid  = document.getElementById('tickets-grid');
+      const empty = document.getElementById('empty-state');
+
+      // Vider la grille (sauf loader et empty-state)
+      Array.from(grid.children).forEach(el => {
+        if (el.id !== 'loader' && el.id !== 'empty-state') el.remove();
+      });
+
+      const liste = Object.entries(tousLesTickets);
+
+      // Filtrer
+      const filtres = liste.filter(([_, t]) => {
+        if (filtreActif === 'en_attente') return t.statut_demande === 'en_attente';
+        if (filtreActif === 'confirme')   return t.statut_demande === 'confirmé';
+        if (filtreActif === 'rejete')     return t.statut_demande === 'rejeté';
+        return true; // tous
+      });
+
+      if (filtres.length === 0) {
+        empty.style.display = 'flex';
+        return;
+      }
+      empty.style.display = 'none';
+
+      // Trier par date décroissante
+      filtres.sort((a, b) => new Date(b[1].date) - new Date(a[1].date));
+
+      filtres.forEach(([code, ticket]) => {
+        const isConfirme = ticket.statut_demande === 'confirmé';
+        const isRejete   = ticket.statut_demande === 'rejeté';
+        const montantStr = ticket.montant ? Number(ticket.montant).toLocaleString('fr-FR') + ' FCFA' : '—';
+
+        const card = document.createElement('div');
+        card.className   = 'ticket-card' + (isConfirme ? ' confirmed' : '') + (isRejete ? ' rejected' : '');
+        card.id          = 'card-' + code;
+        card.dataset.nom    = ticket.nom    || '';
+        card.dataset.email  = ticket.email  || '';
+        card.dataset.type   = ticket.type   || '';
+        card.dataset.montant = ticket.montant || 0;
+
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="ticket-code">${code}</div>
+            <span class="badge ${isConfirme ? 'badge-ok' : isRejete ? 'badge-reject' : 'badge-wait'}">
+              ${isConfirme ? '✅ Confirmé' : isRejete ? '✕ Rejeté' : '⏳ En attente'}
+            </span>
+          </div>
+          <div class="card-body">
+            <div class="info-row"><span class="info-label">👤 Nom</span><span class="info-val">${ticket.nom || '—'}</span></div>
+            <div class="info-row"><span class="info-label">📧 Email</span><span class="info-val email-val">${ticket.email || '—'}</span></div>
+            <div class="info-row"><span class="info-label">📱 Tél</span><span class="info-val">${ticket.telephone || '—'}</span></div>
+            <div class="info-row"><span class="info-label">🎟️ Billet</span><span class="info-val">${ticket.type || '—'}</span></div>
+            <div class="info-row"><span class="info-label">💰 Montant</span><span class="info-val montant-val">${montantStr}</span></div>
+            <div class="info-row"><span class="info-label">📅 Date</span><span class="info-val">${ticket.date || '—'}</span></div>
+          </div>
+          <div class="card-actions">
+            ${!isConfirme && !isRejete ? `
+              <button class="btn-ok" onclick="confirmerTicket('${code}', this)">✅ Confirmer &amp; Envoyer</button>
+              <button class="btn-reject" onclick="rejeterTicket('${code}', this)">✕ Rejeter</button>
+            ` : isConfirme ? `
+              <button class="btn-ok" disabled>✅ Déjà confirmé</button>
+            ` : `
+              <button class="btn-reject" disabled>✕ Rejeté</button>
+            `}
+          </div>`;
+
+        grid.appendChild(card);
+      });
+    }
+
+    // ── Changer d'onglet ──
+    window.changerOnglet = function(filtre, btnEl) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+      filtreActif = filtre;
+      renderGrille(); // re-render immédiat avec les données déjà en mémoire
+    };
+
+    // ── Firebase : écouter les changements en temps réel ──
+    window.addEventListener('load', () => {
+      document.getElementById('loader').style.display = 'flex';
+
+      onValue(ref(db, 'tickets'), (snapshot) => {
+        document.getElementById('loader').style.display = 'none';
+
+        if (!snapshot.exists()) {
+          tousLesTickets = {};
+        } else {
+          tousLesTickets = snapshot.val();
+        }
+
+        // Mettre à jour compteurs ET grille à chaque changement Firebase
+        updateCompteurs();
+        renderGrille();
+      });
+
+      // Mot de passe
+      document.getElementById('expired-overlay').classList.add('show');
+      document.getElementById('expired-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const val = document.getElementById('password').value.trim();
+        if (val !== "Ekiejewandasurvous?1234") {
+          document.getElementById('err-msg').textContent = "❌ Mot de passe incorrect";
+        } else {
+          document.getElementById('expired-overlay').classList.remove('show');
+          document.getElementById('err-msg').textContent = "";
+        }
+      });
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg: #090909; --surface: #111; --surface2: #1a1a1a;
+      --border: rgba(255,255,255,0.07);
+      --accent: #FF3C00; --gold: #FFB800;
+      --green: #22c55e; --red: #ef4444;
+      --text: #F0EDE6; --muted: #666;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: rgba(9,9,9,0.97); border-bottom: 1px solid var(--border);
+      padding: 0 2rem; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; }
+    .header-logo span { color: var(--accent); }
+    .header-badge {
+      font-size: 0.7rem; background: rgba(255,60,0,0.15);
+      border: 1px solid rgba(255,60,0,0.3); color: var(--accent);
+      padding: 4px 12px; border-radius: 100px; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--red); }
+
+    .stats-bar { display: flex; gap: 1rem; padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); }
+    .stat-card {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.2rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .stat-icon { width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .stat-icon.orange { background: rgba(255,184,0,0.12); }
+    .stat-icon.green  { background: rgba(34,197,94,0.12); }
+    .stat-icon.red    { background: rgba(239,68,68,0.12); }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; line-height: 1; }
+    .stat-num.orange { color: var(--gold); }
+    .stat-num.green  { color: var(--green); }
+    .stat-num.red    { color: var(--red); }
+    .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+    .tabs { display: flex; gap: 0.5rem; padding: 1.2rem 2rem 0; }
+    .tab-btn {
+      padding: 7px 18px; border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+      cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em;
+    }
+    .tab-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+    .tab-btn.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 500; }
+
+    .grid-wrapper { padding: 1.5rem 2rem 3rem; }
+    #tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+
+    .ticket-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; transition: border-color 0.2s, transform 0.2s;
+    }
+    .ticket-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+    .ticket-card.confirmed { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.04); }
+    .ticket-card.rejected  { border-color: rgba(239,68,68,0.3); opacity: 0.55; }
+
+    .card-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--border); background: var(--surface2);
+    }
+    .ticket-code { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.1em; color: var(--gold); }
+
+    .badge { font-size: 0.68rem; font-weight: 600; padding: 4px 12px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .badge-wait   { background: rgba(255,184,0,0.15); color: var(--gold); border: 1px solid rgba(255,184,0,0.3); }
+    .badge-ok     { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .badge-reject { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+    .card-body { padding: 0.9rem 1.1rem; display: flex; flex-direction: column; gap: 7px; }
+    .info-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; font-size: 0.83rem; }
+    .info-label { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+    .info-val { color: var(--text); text-align: right; word-break: break-all; }
+    .email-val { color: #60a5fa; font-size: 0.78rem; }
+    .montant-val { color: var(--gold); font-weight: 600; }
+
+    .card-actions { padding: 0.8rem 1.1rem; display: flex; gap: 0.6rem; border-top: 1px solid var(--border); }
+    .btn-ok {
+      flex: 1; padding: 10px; background: var(--green); color: white;
+      border: none; border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-ok:hover:not(:disabled) { opacity: 0.85; }
+    .btn-ok:active { transform: scale(0.97); }
+    .btn-ok:disabled { background: #1e3a2a; color: #4ade80; cursor: not-allowed; }
+    .btn-reject {
+      padding: 10px 14px; background: transparent; color: var(--red);
+      border: 1px solid rgba(239,68,68,0.35); border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-reject:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
+    .btn-reject:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    #empty-state, #loader {
+      grid-column: 1 / -1; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 4rem; color: var(--muted); gap: 1rem; text-align: center;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MOT DE PASSE */
+    .expired-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.96); z-index: 400;
+      flex-direction: column; align-items: center; justify-content: center; padding: 2rem;
+    }
+    .expired-overlay.show { display: flex; }
+    .overlay-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 2rem 1.5rem;
+      width: 100%; max-width: 360px; text-align: center;
+    }
+    .overlay-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .overlay-title { font-size: 1rem; font-weight: 500; margin-bottom: 1.5rem; color: var(--text); letter-spacing: 0.05em; }
+    .passw {
+      width: 100%; padding: 0.85rem 1rem; border-radius: 10px; font-size: 1rem;
+      background: #1a1a1a; border: 1px solid var(--border); color: var(--text);
+      margin-bottom: 1rem; outline: none;
+    }
+    .passw:focus { border-color: var(--accent); }
+    .btn-primary {
+      width: 100%; background: var(--accent); color: white; border: none;
+      padding: 0.85rem; border-radius: 10px; font-size: 1rem; font-weight: 500;
+      cursor: pointer; transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { background: #e03400; }
+    .err-msg { color: var(--accent); font-size: 0.85rem; margin-top: 0.75rem; min-height: 20px; }
+
+    @media (max-width: 640px) {
+      .stats-bar { flex-direction: column; }
+      .grid-wrapper { padding: 1rem; }
+      #tickets-grid { grid-template-columns: 1fr; }
+      header { padding: 0 1rem; }
+      .tabs { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- MOT DE PASSE -->
+<div class="expired-overlay" id="expired-overlay">
+  <div class="overlay-card">
+    <div class="overlay-icon">🔐</div>
+    <p class="overlay-title">Accès réservé au personnel INTHEROOM</p>
+    <form id="expired-form">
+      <input type="password" id="password" class="passw" placeholder="Mot de passe" required>
+      <button type="submit" class="btn-primary">Valider</button>
+      <p class="err-msg" id="err-msg"></p>
+    </form>
+    <a href="accueil.html" style="display:block; margin-top:1rem; font-size:0.85rem;">← Retour à l'accueil</a>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-logo">INTHEROOM <span>ADMIN</span></div>
+  <a href="scan.html" style="font-size:0.78rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text);">📷 Scan</a>
+  <div class="header-badge"><a href="accueil.html" style="color:inherit;">← Accueil</a></div>
+</header>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-icon orange">⏳</div>
+    <div>
+      <div class="stat-num orange" id="count-attente">0</div>
+      <div class="stat-label">En attente</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">✅</div>
+    <div>
+      <div class="stat-num green" id="count-confirme">0</div>
+      <div class="stat-label">Confirmés</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon red">✕</div>
+    <div>
+      <div class="stat-num red" id="count-rejete">0</div>
+      <div class="stat-label">Rejetés</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" data-filtre="en_attente" onclick="changerOnglet('en_attente', this)">⏳ En attente</button>
+  <button class="tab-btn" data-filtre="confirme"   onclick="changerOnglet('confirme', this)">✅ Confirmés</button>
+  <button class="tab-btn" data-filtre="rejete"     onclick="changerOnglet('rejete', this)">✕ Rejetés</button>
+  <button class="tab-btn" data-filtre="tous"       onclick="changerOnglet('tous', this)">Tous</button>
+</div>
+
+<!-- GRILLE -->
+<div class="grid-wrapper">
+  <div id="tickets-grid">
+    <div id="loader" style="display:flex;">
+      <div class="spinner"></div>
+      <span>Chargement des tickets...</span>
+    </div>
+    <div id="empty-state">
+      <div style="font-size:3rem">🎟️</div>
+      <p>Aucun ticket dans cette catégorie</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

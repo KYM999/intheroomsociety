@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan tickets — INTHEROOM</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="icon" type="image/png" href="images/logo_transparent.png">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --border: rgba(255,255,255,0.08);
+            --accent: #FF3C00;
+            --text: #F0EDE6;
+            --muted: #888880;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10,10,10,0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+        }
+
+        .header-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 1.5rem;
+            margin-left: auto;
+        }
+
+        .header-nav a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+        .header-nav a:hover { color: var(--text); }
+
+        /* ── CONTENU ── */
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-bottom: 2rem;
+        }
+
+        /* ── SCANNER ── */
+        #reader {
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        /* ── RESULTAT ── */
+        #resultat {
+            margin-top: 1.5rem;
+            padding: 1.2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.7;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+ @media (max-width: 768px) {
+
+
+ }
+
+        
+    </style>
+</head>
+<body>
+<!-- HEADER -->
+<header>
+    <span class="header-title">INTHEROOM SOCIETY</span>
+    <nav class="header-nav">
+        <a href="accueil.html">Accueil</a>
+        <a href="scan.html">Scan</a>
+        <a href="acceptation.html">acceptation des demandes</a>
+    </nav>
+</header>
+
+<!-- CONTENU -->
+<div class="container">
+    <h1>Scan de tickets</h1>
+    <p class="subtitle">Scannez le QR code du billet pour valider l'entrée</p>
+    <div id="reader"></div>
+    <div id="resultat">En attente d'un scan...</div>
+</div>
+
+<script type="module">
+   
+
+    // Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+    import { getDatabase, ref, get, child, update } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey           : "AIzaSyDuGETE1ZGIg8tC8Ytl3FXr7KKI8CNzco4",
+        authDomain       : "intheroom-tickets.firebaseapp.com",
+        databaseURL      : "https://intheroom-tickets-default-rtdb.firebaseio.com",
+        projectId        : "intheroom-tickets",
+        storageBucket    : "intheroom-tickets.firebasestorage.app",
+        messagingSenderId: "1010825112044",
+        appId            : "1:1010825112044:web:a86452f04f28a4d8d5b8c9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    async function verifierDansFirebase(idScanne) {
+        const zoneResultat = document.getElementById('resultat');
+        zoneResultat.style.color = "var(--text)";
+        zoneResultat.innerHTML = "🔍 Vérification en cours...";
+
+        try {
+            const snapshot = await get(child(ref(db), `tickets/${idScanne}`));
+
+            if (snapshot.exists()) {
+                const ticket = snapshot.val();
+                if (ticket.statut_scan === "utilisé") {
+                    zoneResultat.style.color = "orange";
+                    zoneResultat.innerHTML = `⚠️ Ticket déjà utilisé !<br><small>${idScanne}</small><br>Nom : ${ticket.nom}`;
+                } else {
+                    await update(ref(db, `tickets/${idScanne}`), { statut: "utilisé" });
+                    zoneResultat.style.color = "#22c55e";
+                    zoneResultat.innerHTML = `✅ Accès Autorisé !<br>Nom : ${ticket.nom}<br><small>${ticket.type}</small>`;
+                }
+            } else {
+                zoneResultat.style.color = "#ef4444";
+                zoneResultat.innerHTML = "❌ Ticket inconnu";
+            }
+        } catch (err) {
+            zoneResultat.style.color = "#ef4444";
+            zoneResultat.innerHTML = "❌ Erreur de connexion";
+        }
+
+        setTimeout(() => {
+            zoneResultat.style.color = "var(--muted)";
+            zoneResultat.innerHTML = "Prêt pour un nouveau scan...";
+            if (scanner.getState() === Html5QrcodeScannerState.PAUSED) {
+                scanner.resume();
+            }
+        }, 15000);
+    }
+
+    const scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+
+    scanner.render(
+        (decodedText) => {
+            if (scanner.getState() === Html5QrcodeScannerState.SCANNING) {
+                scanner.pause();
+            }
+            verifierDansFirebase(decodedText);
+        },
+        () => {}
+    );
+</script>
+</body>
+</html>

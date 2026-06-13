@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement — INTHEROOM</title>
+  <link rel="icon" type="image/png" href="images/logo_transparent.png">
+
+
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: rgba(255,255,255,0.08);
+      --accent: #FF3C00;
+      --text: #F0EDE6;
+      --muted: #888880;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,10,0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex; align-items: center;
+      height: 56px;
+    }
+
+    header h2 {
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      font-size: 0.95rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 1.5rem 1.2rem 3rem;
+    }
+
+    .recap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .recap-ligne {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      gap: 1rem;
+    }
+
+    .recap-ligne span:first-child { color: var(--muted); flex: 1; }
+
+    .recap-total {
+      font-size: 1.1rem; font-weight: bold;
+      color: #FFB800;
+      border-top: 1px solid var(--border);
+      padding-top: 0.8rem; margin-top: 0.5rem;
+    }
+
+    .section-title {
+      font-size: 1.1rem; font-weight: 600;
+      margin-bottom: 1.2rem;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    form { display: flex; flex-direction: column; }
+
+    input {
+      width: 100%;
+      padding: 1rem 1.1rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 16px;
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input:focus { border-color: var(--accent); }
+    input::placeholder { color: var(--muted); }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 1.1rem;
+      border-radius: 12px;
+      font-size: 1.05rem; font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.2s, transform 0.1s;
+      -webkit-appearance: none;
+    }
+    .btn-primary:hover { background: #e03400; }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .erreur {
+      color: #ef4444;
+      font-size: 0.82rem;
+      margin-top: -0.5rem;
+      margin-bottom: 0.6rem;
+      display: none;
+      padding-left: 0.3rem;
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 1.2rem 1rem 2rem; }
+      .btn-primary { font-size: 1rem; padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>INTHEROOM SOCIETY</h2>
+</header>
+
+<div class="container">
+
+  <div class="recap" id="recap">
+    <div id="recap-items"></div>
+    <div class="recap-ligne recap-total">
+      <span>Total</span>
+      <span id="recap-total">0 FCFA</span>
+    </div>
+  </div>
+
+  <p class="section-title">Vos informations</p>
+
+  <form id="form-achat">
+    <input type="text"  id="nom"       placeholder="Nom complet *" required />
+    <p class="erreur"  id="err-nom">Veuillez entrer votre nom</p>
+
+    <input type="email" id="email"     placeholder="Email (pour recevoir le ticket) *" required />
+    <p class="erreur"  id="err-email">Email invalide</p>
+
+    <input type="tel"   id="telephone" placeholder="Téléphone Wave / Orange Money *" required />
+    <p class="erreur"  id="err-tel">Numéro invalide (minimum 9 chiffres)</p>
+
+    <button type="submit" class="btn-primary" id="btn-primary">
+      Confirmer et payer →
+    </button>
+  </form>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+  const firebaseConfig = {
+  apiKey           : "AIzaSyDuGETE1ZGIg8tC8Ytl3FXr7KKI8CNzco4",
+  authDomain       : "intheroom-tickets.firebaseapp.com",
+  databaseURL      : "https://intheroom-tickets-default-rtdb.firebaseio.com",
+  projectId        : "intheroom-tickets",
+  storageBucket    : "intheroom-tickets.firebasestorage.app",
+  messagingSenderId: "1010825112044",
+  appId            : "1:1010825112044:web:a86452f04f28a4d8d5b8c9"
+};
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  
+  async function sauvegarderTicket(nom, email, telephone, type, montant) {
+    const codeTicket = "TK-" + Math.random().toString(36).slice(2,8).toUpperCase();
+    await set(ref(db, 'tickets/' + codeTicket), {
+      nom, email, telephone, type, montant,
+      statut_demande: 'en_attente',
+      statut_scan   : 'non_utilisé',
+      date          : new Date().toLocaleString('fr-FR')
+    });
+    return codeTicket;
+  }
+
+  // ── RÉCUPÉRER LES DONNÉES DU PANIER ──
+  const params   = new URLSearchParams(window.location.search);
+  const amount   = parseInt(params.get('amount')) || 0;
+  const cartData = JSON.parse(decodeURIComponent(params.get('cart') || '[]'));
+
+  // ── AFFICHER LE RÉCAPITULATIF ──
+  const recapItems = document.getElementById('recap-items');
+  cartData.forEach(item => {
+    recapItems.innerHTML += `
+      <div class="recap-ligne">
+        <span>${item.name} x${item.qty}</span>
+        <span>${(item.price * item.qty).toLocaleString('fr-FR')} FCFA</span>
+      </div>`;
+  });
+  document.getElementById('recap-total').textContent = amount.toLocaleString('fr-FR') + ' FCFA';
+
+  // ── SOUMISSION DU FORMULAIRE ──
+  document.getElementById('form-achat').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const nom   = document.getElementById('nom').value.trim();
+    const email = document.getElementById('email').value.trim();
+
+    // Nettoyer le numéro ← let au lieu de const
+    let telephone = document.getElementById('telephone').value.trim();
+    telephone = telephone.replace(/\s/g, '');
+    telephone = telephone.replace(/^00/, '+');
+    if (telephone.startsWith('7') && telephone.length === 9) {
+      telephone = '+221' + telephone;
+    }
+
+    // Validation
+    let erreur = false;
+    if (!nom) {
+      document.getElementById('err-nom').style.display = 'block'; erreur = true;
+    } else {
+      document.getElementById('err-nom').style.display = 'none';
+    }
+    if (!email.includes('@')) {
+      document.getElementById('err-email').style.display = 'block'; erreur = true;
+    } else {
+      document.getElementById('err-email').style.display = 'none';
+    }
+    if (telephone.length < 9) {
+      document.getElementById('err-tel').style.display = 'block'; erreur = true;
+    } else {
+      document.getElementById('err-tel').style.display = 'none';
+    }
+    if (erreur) return;
+
+    const listeArticles = cartData.map(item =>
+      `${item.name} x${item.qty} — ${(item.price * item.qty).toLocaleString('fr-FR')} FCFA`
+    ).join('\n');
+
+    // Sauvegarder dans Firebase
+    const codeTicket = await sauvegarderTicket(nom, email, telephone, listeArticles, amount);
+
+    alert(`✅ Commande enregistrée !
+
+Veuillez effectuer un paiement au numéro suivant : +221 771598365
+Une fois le paiement reçu, vous serez notifié par email avec le QR code de votre ticket dans les 48h.
+Merci de votre confiance !
+En cas de problème : +221 781014178`);
+
+    window.location.href = 'accueil.html';
+  });
+</script>
+
+</body>
+</html>

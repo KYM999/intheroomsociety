@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intheroom society</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="images/logo_transparent.png">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: rgba(255,255,255,0.08);
+    --accent: #FF3C00;
+    --accent2: #FFB800;
+    --text: #F0EDE6;
+    --muted: #888880;
+    --success: #22c55e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+#splash-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.05); 
+}
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+     position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,10,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  flex-wrap: nowrap;
+  }
+
+   .centre{
+    display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  min-height: 7vh;
+  width: 500px;
+  }
+
+  .liens {  
+    display: flex;
+  justify-content: space-between;
+  width: 50px;
+  position: center;
+  padding: 0 8rem;
+  gap: 2rem;
+}
+   a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .liens a:hover { color: var(--text); }
+
+  .header-actions { display: flex; gap: 1rem; align-items: center; }
+
+  .btn-icon {
+    width: 38px; height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-icon:hover { border-color: rgba(255,255,255,0.2); background: var(--surface2); }
+
+  #panier { background: white; }
+  .cart-badge {
+    position: absolute; top: -6px; right: -6px;
+    background: var(--accent); color: white;
+    font-size: 0.65rem; font-weight: 500;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .hero {
+    position: relative;
+    padding: 4rem 2rem 3rem;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,60,0,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .flash-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: white;
+    font-size: 0.7rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 100px;
+    margin-bottom: 1.5rem;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .flash-dot { width: 6px; height: 6px; background: white; border-radius: 50%; }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3.5rem, 10vw, 7rem);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+
+  h1 .line2 { color: var(--accent); }
+
+  .hero-sub {
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 300;
+    max-width: 420px; margin: 0 auto 2.5rem;
+    line-height: 1.6;
+    opacity: 0.7;
+  }
+
+  h2 { display: flex; justify-content: center; }
+
+  .countdown-wrapper {
+    display: inline-flex;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 4rem;
+    opacity: 5;
+  }
+
+  .countdown-unit {
+    padding: 1.2rem 1.8rem;
+    text-align: center;
+    position: relative;
+    opacity: 5;
+  }
+
+  .countdown-unit + .countdown-unit::before {
+    content: ':';
+    position: absolute; left: -2px; top: 50%;
+    transform: translateY(-60%);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--muted);
+  }
+
+  .countdown-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    line-height: 1;
+    color: var(--accent);
+    display: block;
+    min-width: 60px;
+    opacity: 8;
+  }
+
+  .countdown-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-top: 4px;
+  }
+
+  .section-header {
+    padding: 0 2rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+  }
+
+  .section-annonce {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    display: flex;
+    position: relative;
+  }
+
+  .section-link {
+    font-size: 0.8rem; color: var(--muted); text-decoration: none;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .section-link:hover { color: var(--text); }
+
+  .products-grid {
+    padding: 0 2rem 4rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .productsj-grid {
+    padding: 0 2rem 4rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.25s, transform 0.25s;
+  }
+
+  .product-card:hover {
+    border-color: rgba(255,255,255,0.18);
+    transform: translateY(-3px);
+  }
+
+  .product-img {
+    aspect-ratio: 1;
+    background: var(--surface2);
+    position: relative;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .product-img img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.4s;
+  }
+
+  .product-card:hover .product-img img { transform: scale(1.05); }
+
+  .discount-tag {
+    position: absolute; top: 12px; left: 12px;
+    background: var(--accent);
+    color: white;
+    font-size: 0.7rem; font-weight: 500;
+    padding: 3px 10px; border-radius: 6px;
+  }
+
+  .wishlist-btn {
+    position: absolute; top: 10px; right: 10px;
+    width: 34px; height: 34px;
+    background: rgba(10,10,10,0.7);
+    border: none; border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .wishlist-btn:hover { background: rgba(255,60,0,0.3); }
+
+  .product-info { padding: 1rem 1.2rem 1.2rem; }
+
+  .product-brand {
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 4px;
+  }
+
+  .product-name { font-size: 1.2rem; font-weight: 400; line-height: 1.4; margin-bottom: 0.75rem; }
+
+  .product-footer { display: flex; align-items: center; justify-content: space-between; }
+
+  .price-group { display: flex; align-items: baseline; gap: 8px; }
+
+  .price-now { font-size: 1.25rem; font-weight: 500; color: var(--accent2); }
+  .price-old { font-size: 0.85rem; color: var(--muted); text-decoration: line-through; }
+
+  .add-btn {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border: none; border-radius: 8px;
+    cursor: pointer; color: white;
+    font-size: 1.3rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .add-btn:hover { background: #e03400; }
+  .add-btn:active { transform: scale(0.94); }
+
+  .stock-bar { margin-top: 0.75rem; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .stock-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s; }
+  .stock-label { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+
+  .categories { padding: 0 2rem 4rem; }
+
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+  .cat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem 1.2rem;
+    cursor: pointer;
+    transition: border-color 0.25s, background 0.25s;
+    text-align: center;
+  }
+  .cat-card:hover { border-color: rgba(255,60,0,0.4); background: var(--surface2); }
+  .cat-icon { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+  .cat-name { font-size: 0.85rem; font-weight: 400; letter-spacing: 0.04em; }
+  .cat-count { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+  .urgency-banner {
+    margin: 0 2rem 4rem;
+    background: linear-gradient(135deg, #1a0800 0%, #0f0f0f 50%, #001a0f 100%);
+    border: 1px solid rgba(255,60,0,0.25);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .urgency-text h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.4rem;
+  }
+
+  .urgency-text p { font-size: 0.9rem; color: var(--muted); font-weight: 300; line-height: 1.5; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.85rem 2rem;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-primary:hover { background: #e03400; }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .section-descrip { size: 1rem; }
+
+  .section-par {
+     margin: 1rem 2rem 1rem;
+    background: linear-gradient(135deg, #1a0800 0%, #0f0f0f 50%, #001a0f 100%);
+    border: 1px solid rgba(255,60,0,0.25);
+    border-radius: 16px;
+    padding: 2rem 2.5rem; 
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .section-par2 {
+     margin: 1rem 2rem 1rem;
+    background: linear-gradient(135deg, #1a0800 0%, #0f0f0f 50%, #001a0f 100%);
+    border: 1px solid rgba(255,60,0,0.25);
+    border-radius: 16px;
+    padding: 2rem 2.5rem; 
+    gap: 2rem;
+  }
+
+  .descrip-img { width: 350px; height: 280px; position: center; }
+  .section-fin { display: flex; align-items: center; justify-content: space-between; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    color: var(--muted); font-size: 0.8rem;
+  }
+
+  .cart-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .cart-overlay.open { opacity: 1; pointer-events: all; }
+
+  .cart-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 380px; max-width: 100vw;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 201;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    display: flex; flex-direction: column;
+  }
+  .cart-drawer.open { transform: translateX(0); }
+
+  .cart-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .cart-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.05em; }
+
+  .close-btn {
+    width: 32px; height: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer; color: var(--muted);
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s;
+  }
+  .close-btn:hover { color: var(--text); }
+
+  .cart-items { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+  .cart-empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+
+  .cart-item { display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+
+  .cart-item-img {
+    width: 64px; height: 64px;
+    background: var(--surface2);
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .cart-item-info { flex: 1; }
+  .cart-item-name { font-size: 0.88rem; line-height: 1.4; margin-bottom: 4px; }
+  .cart-item-brand { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; }
+
+  .cart-item-footer { display: flex; align-items: center; justify-content: space-between; }
+
+  .qty-control { display: flex; align-items: center; gap: 8px; }
+
+  .qty-btn {
+    width: 26px; height: 26px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer; color: var(--text);
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .qty-btn:hover { background: #222; }
+
+  .qty-num { font-size: 0.9rem; min-width: 20px; text-align: center; }
+  .cart-item-price { font-size: 0.9rem; color: var(--accent2); font-weight: 500; }
+
+  .cart-footer { padding: 1.5rem; border-top: 1px solid var(--border); }
+
+  .cart-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 1rem; }
+  .cart-total-amount { font-size: 1.4rem; font-weight: 500; color: var(--accent2); }
+
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--success);
+    color: white;
+    padding: 0.7rem 1.4rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    z-index: 300;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .expired-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 400;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .expired-overlay.show { display: flex; }
+
+ @media (max-width: 768px) {
+  header { padding: 0 1rem; height: auto; min-height: 60px; flex-wrap: wrap; gap: 0.5rem; }
+  .centre { width: 100%; min-height: auto; }
+  .liens { padding: 0 1rem; gap: 1rem; }
+  .hero { padding: 2rem 1rem; }
+  h1 { font-size: clamp(2.5rem, 8vw, 4rem); }
+  .logon1, .logon2 { display: none !important; }
+  .countdown-wrapper { flex-wrap: wrap; }
+  .countdown-unit { padding: 0.8rem 1rem; }
+  .countdown-num { font-size: 2rem; min-width: 36px; }
+  .cat-grid { grid-template-columns: repeat(2, 1fr); }
+  .products-grid, .productsj-grid { padding: 0 1rem 2rem; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
+  .urgency-banner { flex-direction: column; text-align: center; margin: 0 1rem 2rem; padding: 1.5rem; }
+  section[style*="max-width: 900px"] { padding: 2rem 1rem !important; }
+  div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; gap: 2rem !important; }
+  div[style*="grid-template-columns:repeat(3,1fr)"] { grid-template-columns: 1fr !important; }
+  .cart-drawer { width: 100vw; }
+  footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .products-grid, .productsj-grid { grid-template-columns: 1fr; }
+  .cat-grid { grid-template-columns: repeat(2, 1fr); }
+  .countdown-num { font-size: 1.8rem; }
+}
+</style>
+</head>
+<body>
+<!-- HEADER -->
+<header>
+  <audio id="bg-music">
+    <source src="audio/Freeze Corleone - Freeze Raël.mp3" type="audio/mp3">
+  </audio>
+
+  <button id="btn-son" onclick="toggleSon()" style="
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.6); 
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3); 
+    border-radius: 8px; 
+    cursor: pointer;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    flex-shrink: 0;">
+    🔇 Son
+  </button>
+
+  <div style="position: absolute; left: 50%; transform: translateX(-50%); 
+              display: flex; flex-direction: column; align-items: center; gap: 2px;">
+    <span style="font-size: 0.9rem; font-weight: 500; letter-spacing: 0.1em; 
+                 text-transform: uppercase; white-space: nowrap;">
+      INTHEROOM SOCIETY
+    </span>
+    <div style="display: flex; gap: 1.2rem;">
+      <a href="accueil.html" style="font-size: 0.7rem; color: var(--muted); 
+         text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase;">
+        Accueil
+      </a>
+      <a href="acceptation.html" style="font-size: 0.7rem; color: var(--muted); 
+         text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase;">
+        Administration
+      </a>
+    </div>
+  </div>
+
+  <div style="flex-shrink: 0; margin-left: auto;">
+    <button class="btn-icon" onclick="openCart()" title="Panier">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="background-color: white;">
+        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <path d="M16 10a4 4 0 01-8 0"/>
+      </svg>
+      <span class="cart-badge" id="cart-count">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" style="position: relative; overflow: hidden;">
+   <video id="bg-video" autoplay muted playsinline
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0;">
+    <source src='https://res.cloudinary.com/deut5dsdu/video/upload/v1780784079/P1311464_hhozav.mp4' type="video/mp4">
+  </video>
+  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1;"></div>
+  
+   <div><img class="logon1" src="images/logo_transparent.png" 
+       style="position: absolute; top: 170px; left: 1350px; width: 310px; height: 200px; z-index: 2;"></div>
+   <div class="logon2">
+     <img class="logon2" src="images/logo_transparent.png" 
+       style="position: absolute; top: 170px; left: 0px; width: 310px; height: 200px; z-index: 2;">    
+   </div>
+  
+  <div class="flash-badge">
+    <span class="flash-dot"></span>
+    Vente flash active
+  </div>
+  <div class="logon">
+    <h1>VENTE<br><span class="line2">EXCLUSIVE</span><br>14 DAYS</h1>
+  </div>
+  <p class="hero-sub">Des offres incroyables disponibles pendant 2 semaines seulement. Ne laissez pas passer cette opportunité.</p>
+
+  <div class="countdown-wrapper" id="countdown-wrapper">
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-days">13</span>
+      <span class="countdown-label">Jours</span>
+    </div>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-hours">59</span>
+      <span class="countdown-label">Heures</span>
+    </div>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-minutes">59</span>
+      <span class="countdown-label">Minutes</span>
+    </div>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cd-seconds">59</span>
+      <span class="countdown-label">Secondes</span>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="categories">
+  <div class="section-header">
+    <h2 class="section-title">Catégories</h2>
+  </div>
+  <div class="cat-grid">
+    <div class="cat-card" onclick="filterCategory('Standard')"><div class="cat-name">Standard</div></div>
+    <div class="cat-card" onclick="filterCategory('Trio')"><div class="cat-name">Trio</div></div>
+    <div class="cat-card" onclick="filterCategory('VIP')"><div class="cat-name">VIP</div></div>
+    <div class="cat-card" onclick="filterCategory('T-shirt Hommes')"><div class="cat-name">T-shirt mixtes</div></div>
+    <div class="cat-card" onclick="filterCategory('T-shirt Femmes')"><div class="cat-name">T-shirt Femmes</div></div>
+    <div class="cat-card" onclick="filterCategory('10p')"><div class="cat-name">10 personnes</div></div>
+    <div class="cat-card" onclick="filterCategory('Donation')"><div class="cat-name">Donation</div></div>
+    <div class="cat-card" onclick="filterCategory('Salons')"><div class="cat-name">Salons</div></div>
+  </div>
+</section>
+
+<!-- Tickets prévente -->
+<section>
+  <div class="section-header">
+    <h2 class="section-title">Offres Préventes</h2>
+    <a href="#" class="section-link" id="cat-filter-label">Toutes catégories</a>
+  </div>
+  <div class="products-grid" id="products-grid"></div>
+</section>
+
+<!-- Tickets événement -->
+<section>
+  <div class="section-header">
+    <div class="section-espace"></div>
+    <h2 class="section-annonce">ANNONCES DE L'EVENEMENT</h2>
+    <a href="#" class="section-link" id="cat-filter-labelj">Toutes catégories</a>
+  </div>
+  <div class="productsj-grid" id="productsj-grid"></div>
+</section>
+
+<!-- URGENCY BANNER -->
+<div class="urgency-banner">
+  <div class="urgency-text">
+    <h2>LIMITEES A 200 PLACES UNIQUEMENT🤩</h2>
+    <p>La vente se terminera dans deux semaines et les stocks s'épuisent rapidement.</p>
+  </div>
+  <button class="btn-primary" onclick="openCart()">Voir mon panier →</button>
+</div>
+
+<!-- DESCRIPTION -->
+<section class="section-descrip">
+<section style="max-width: 900px; margin: 0 auto; padding: 3rem 2rem;">
+  <div style="text-align:center; margin-bottom: 3rem;">
+    <p style="font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:0.5rem;">Notre histoire</p>
+    <h2 style="font-family:'Bebas Neue',sans-serif; font-size:2.5rem; letter-spacing:0.05em; color:var(--text);">INTHEROOM : THE CULTURE IS IN THE ROOM</h2>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; margin-bottom:4rem;">
+    <div>
+      <p style="font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent); margin-bottom:0.75rem;">Origine</p>
+      <p style="font-size:0.95rem; line-height:1.9; color:var(--muted); font-weight:300;">Né d'une simple vision portée par une bande de jeunes passionnés, INTHEROOM est devenu bien plus qu'un événement. C'est aujourd'hui un mouvement culturel, une identité, une énergie qui rassemble une génération entière autour de la musique, de l'esthétique, de la fête et de l'expression créative.</p>
+      <br>
+      <p style="font-size:0.95rem; line-height:1.9; color:var(--muted); font-weight:300;">En seulement quelques éditions, INTHEROOM s'est imposé comme l'un des concepts les plus marquants de Dakar, considéré par beaucoup comme un Top 3 des meilleurs événements de la capitale sénégalaise.</p>
+    </div>
+    <div style="border-radius:12px; overflow:hidden; aspect-ratio:4/3;">
+      <img src="images/Para0.jpeg" alt="INTHEROOM origines" style="width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.4s;">
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; margin-bottom:4rem;">
+    <div style="border-radius:12px; overflow:hidden; aspect-ratio:4/3;">
+      <img src="images/Para2.jpeg" alt="INTHEROOM ADN" style="width:100%; height:100%; object-fit:cover; display:block;">
+    </div>
+    <div>
+      <p style="font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent); margin-bottom:0.75rem;">Notre ADN</p>
+      <p style="font-size:0.95rem; line-height:1.9; color:var(--muted); font-weight:300;">Depuis nos débuts, nous avons construit chaque événement avec une seule obsession : faire vivre des émotions réelles. Pas seulement des soirées, mais des expériences dont les gens se souviennent longtemps après la dernière musique.</p>
+      <br>
+      <p style="font-size:0.95rem; line-height:1.9; color:var(--muted); font-weight:300;">Avec plus de 15 événements à notre actif, des concepts réalisés entre Dakar et Saly, nous avons appris à transformer chaque espace en univers.</p>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; margin-bottom:4rem;">
+    <div>
+      <p style="font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent); margin-bottom:0.75rem;">Les artistes</p>
+      <p style="font-size:0.95rem; line-height:1.9; color:var(--muted); font-weight:300;">INTHEROOM a toujours eu à cœur de mettre les artistes en avant. Nous avons collaboré avec plusieurs figures importantes de la scène urbaine, notamment Kaptain Doa, Kaki Santana du 667, Killer Octobre et LM Binks lors du mémorable Projet X.</p>
+      <br>
+      <p style="font-size:0.95rem; line-height:1.9; color:var(--muted); font-weight:300;">Nous avons aussi construit des collaborations fortes avec SIXTININE et notre plus grosse collaboration à ce jour avec TOUTWHIPPIN.</p>
+    </div>
+    <div style="border-radius:12px; overflow:hidden; aspect-ratio:4/3;">
+      <img src="images/Para3.jpeg" alt="INTHEROOM artistes" style="width:100%; height:100%; object-fit:cover; display:block;">
+    </div>
+  </div>
+
+  <div style="background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:12px; padding:2.5rem; margin-bottom:3rem;">
+    <p style="font-size:0.95rem; line-height:1.9; color:var(--muted); font-weight:300; font-style:italic;">INTHEROOM entre dans une nouvelle phase avec des événements encore plus immersifs. Notre vision dépasse désormais les frontières de Dakar. Des idées griffonnées entre amis. Des nuits de travail. Des sacrifices. Une vision que beaucoup ne comprenaient pas encore. Aujourd'hui, cette vision devient réalité. Et ce qui se prépare pour la suite est tout simplement hors normes.</p>
+    <p style="margin-top:1.5rem; font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent);">— L'équipe INTHEROOM</p>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem;">
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:2rem; text-align:center;">
+      <p style="font-family:'Bebas Neue',sans-serif; font-size:3rem; color:var(--accent); line-height:1;">15+</p>
+      <p style="font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-top:0.5rem;">Éditions</p>
+    </div>
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:2rem; text-align:center;">
+      <p style="font-family:'Bebas Neue',sans-serif; font-size:3rem; color:var(--accent); line-height:1;">Top 3</p>
+      <p style="font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-top:0.5rem;">Meilleurs événements Dakar</p>
+    </div>
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:2rem; text-align:center;">
+      <p style="font-family:'Bebas Neue',sans-serif; font-size:3rem; color:var(--accent); line-height:1;">2</p>
+      <p style="font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-top:0.5rem;">Villes — Dakar & Saly</p>
+    </div>
+  </div>
+</section>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span>© 2026 INTHEROOM — Vente exclusive à durée limitée</span>
+</footer>
+
+<!-- CART DRAWER -->
+<div class="cart-overlay" id="cart-overlay" onclick="closeCart()"></div>
+<div class="cart-drawer" id="cart-drawer">
+  <div class="cart-header">
+    <span class="cart-title">Mon Panier</span>
+    <button class="close-btn" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cart-items">
+    <div class="cart-empty">
+      <div style="font-size:2.5rem;margin-bottom:1rem">🛒</div>
+      <p style="font-size:0.9rem">Votre panier est vide</p>
+    </div>
+  </div>
+  <div class="cart-footer">
+    <div class="cart-total">
+      <span style="color:var(--muted);font-size:0.9rem">Total</span>
+      <span class="cart-total-amount" id="cart-total">0 FCFA</span>
+    </div>
+    <button class="btn-primary" style="width:100%;text-align:center" onclick="checkout()">
+      Commander maintenant →
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ Ajouté au panier</div>
+
+<!-- EXPIRED OVERLAY -->
+<div class="expired-overlay" id="expired-overlay">
+  <div style="font-size:4rem;margin-bottom:1rem">⏰</div>
+  <h2 id="expire-msg">VENTE TERMINÉE</h2>
+  <p id="descrip_msg">Cette vente flash est maintenant expirée... A TRES BIENTÔT POUR NOTRE PROCHAIN EVENEMENT</p>
+   <a href="acceptation.html" style="display:block; margin-top:1rem; color:var(--muted); font-size:0.85rem; text-decoration:none;">
+   -> Aller vers l'administration
+    </a>
+</div>
+
+<script>
+const music = document.getElementById('bg-music');
+const btn = document.getElementById('btn-son');
+let sonActif = false;
+let audioIndex = 0;
+
+const audios = [
+  'audio/Freeze Corleone - Freeze Raël.mp3',
+  'audio/Gunna - fukumean.mp3',
+  'audio/CENTRAL CEE FT. LIL BABY - BAND4BAND.mp3',
+  'audio/Alx Fidji - FAYA.mp3',
+];
+
+music.addEventListener('ended', () => {
+  audioIndex = (audioIndex + 1) % audios.length;
+  music.src = audios[audioIndex];
+  music.play();
+  sonActif = true;
+  btn.textContent = '🔊 Couper le son';
+});
+
+function toggleSon() {
+  if (sonActif) {
+    music.pause();
+    btn.textContent = '🔇 Activer le son';
+    sonActif = false;
+  } else {
+    music.src = audios[audioIndex];
+    music.play();
+    btn.textContent = '🔊 Couper le son';
+    sonActif = true;
+  }
+}
+
+const videos = [
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784079/P1311464_hhozav.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780783969/P1311513_gw7cd7.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784065/P1311514_pnkqyl.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784721/P1311523_fgf87h.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784714/P1311530_kcnuwo.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784742/P1311535_zyjxiv.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784741/P1311537_w2uskm.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780783901/P1311544_m1muur.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780783978/P1311546_rnapgm.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780783920/P1311552_nbyedb.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780783922/P1311559_z6euiv.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784020/P1311605_wrjhff.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780783934/P1311615_b8tpej.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780783990/P1311621_kdnpzr.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784066/P1311647_f5jw8z.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784753/P1311649_zkrzgs.mp4',
+  'https://res.cloudinary.com/deut5dsdu/video/upload/v1780784010/P1311655_zk9xsp.mp4',
+];
+
+let indexActuel = 0;
+const video = document.getElementById('bg-video');
+video.addEventListener('ended', function() {
+  indexActuel = (indexActuel + 1) % videos.length;
+  video.src = videos[indexActuel];
+  video.play();
+});
+
+// COUNTDOWN
+const dateDebut = new Date(2026, 5, 10, 0, 0, 0).getTime();
+const dateFin   = new Date(2026, 5, 21, 8, 0, 0).getTime();
+
+function updateCountdown() {
+  const now = Date.now();
+  if (now < dateDebut) {
+    document.getElementById('expired-overlay').classList.add('show');
+    document.getElementById('expire-msg').textContent = "⏳ La vente commence le 6 juin !";
+    document.getElementById('descrip_msg').textContent = "cette vente n'a pas encore commencée";
+    return;
+  }
+  if (now >= dateFin) {
+    document.getElementById('expired-overlay').classList.add('show');
+    document.getElementById('expire-msg').textContent = "🔒 La vente est terminée !";
+    return;
+  }
+  const diff = dateFin - now;
+  const j = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const s = Math.floor((diff % (1000 * 60)) / 1000);
+  document.getElementById('cd-days').textContent    = String(j).padStart(2, '0');
+  document.getElementById('cd-hours').textContent   = String(h).padStart(2, '0');
+  document.getElementById('cd-minutes').textContent = String(m).padStart(2, '0');
+  document.getElementById('cd-seconds').textContent = String(s).padStart(2, '0');
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// PRODUCTS DATA
+const products = [
+  { id:1, name:'Tickets standard', brand:'BASIQUE', price:5000, category:'Standard', color:'#1a1a2e' },
+  { id:2, name:'Tickets Trio', brand:'FRIENDS🤩', price:10000, category:'Trio', color:'#1a0f00' },
+  { id:3, name:'Tickets VIP', brand:'LuxStyle😎', price:10000, category:'VIP', color:'#001a0a' },
+  { id:7, name:'T-shirts Mixtes', brand:'INTHEROOM SOCIETY', price:10000, category:'T-shirt Hommes', color:'#001a0a' },
+  { id:8, name:'T-shirts Femmes', brand:'INTHEROOM SOCIETY', price:10000, category:'T-shirt Femmes', color:'#001a0a' },
+  { id:6, name:'Tickets 10 personnes', brand:'FRIENDS🤩', price:40000, category:'10p', color:'#1a0f00' },
+];
+
+const productsj = [
+  { id:4, name:'Tickets standard ', brand:'BASIQUE', price:'10 000', devis:'FCFA', category:'Standard', color:'#1a1a2e' },
+  { id:5, name:'Tickets VIP ', brand:'LuxStyle😎', price:'20 000 ', devis:'FCFA', category:'VIP', color:'#001a0a' },
+  { id:9, name:'Tickets 10 personnes ', brand:'FRIENDS🤩', price:'100 000', devis:'FCFA', category:'10p', color:'#1a0f00' },
+  { id:10, name:'DONATION INTHEROOM', brand:'Orange Money', price:'Num orange:', devis:'+221 78 101 41 78', category:'Donation', color:'#1a0f00' },
+  { id:11, name:'Salons INTHEROOM <br> ✅ 4 entrées VIP incluses (valeur 40K en prévente) <br> ✅ Table réservée et service dédié', image:'images/salon 2.jpeg', brand:'Resrvation sur whatsapp(+221 78 101 41 78)', price:'85 0000', devis:'FCFA', category:'Salons', color:'#1a0f00' },
+  { id:12, name:'Salons INTHEROOM <br> ✅ 6 entrées VIP incluses (valeur 60K) <br> ✅ Table réservée premium <br> ✅ Service dédié', image:'images/Salons.jpeg', brand:'Resrvation sur whatsapp(+221 78 101 41 78)', price:'125 0000', devis:'FCFA', category:'Salons', color:'#1a0f00' },
+  { id:13, name:'Salons INTHEROOM <br> ✅ 10 entrées VIP incluses (valeur 100K) <br> ✅ Salon privé avec 1 bouteille offerte/ crédit consommation équivalent<br> ✅ Service dédié', image:'images/salons3.jpeg', brand:'Resrvation sur whatsapp(+221 78 101 41 78)', price:'250 0000', devis:'FCFA', category:'Salons', color:'#1a0f00' },
+  { id:14, name:'Salons INTHEROOM <br> ✅ 10 entrées VIP incluses <br> ✅ Salon premium bien placé <br> ✅ 1 bouteille premium offerte et Service prioritaire', image:'images/salons4.jpeg', brand:'Resrvation sur whatsapp(+221 78 101 41 78)', price:'300 0000', devis:'FCFA', category:'Salons', color:'#1a0f00' },
+  { id:15, name:"Salons INTHEROOM <br> ✅ 15 entrées VIP incluses (valeur 150K) <br> ✅ Meilleur salon de l'événement <br>✅ 2 bouteilles premium offertes <br> ✅ Accès prioritaire et Service exclusif", image:'images/salons5.jpeg', brand:'Resrvation sur whatsapp(+221 78 101 41 78)', price:'500 0000', devis:'FCFA', category:'Salons', color:'#1a0f00' },
+];
+
+let cart = JSON.parse(localStorage.getItem('flash48_cart') || '[]');
+let currentCategory = null;
+
+function saveCart() { localStorage.setItem('flash48_cart', JSON.stringify(cart)); }
+
+
+function getCatImage(cat) {
+  const images = {
+    'Standard'       : 'images/Standard.jpeg',
+    'Trio'           : 'images/Trio.jpeg',
+    'VIP'            : 'images/VIP.jpeg',
+    'T-shirt Hommes' : 'images/t-shirts hommes.jpeg',
+    'T-shirt Femmes' : 'images/t-shirts femmes.jpeg',
+    '10p'            : 'images/10p.jpeg',
+    'Donation'       : 'images/DON.jpeg',
+    'Salons'         : ['images/salons1.jpeg', 'images/salons2.jpeg', 'images/salons3.jpeg'],
+  };
+  return images[cat];
+}
+
+function renderProducts() {
+  const grid = document.getElementById('products-grid');
+  const filtered = currentCategory ? products.filter(p => p.category === currentCategory) : products;
+  grid.innerHTML = filtered.map(p => `
+    <div class="product-card">
+      <div class="product-img" style="background:${p.color}">
+        <img src="${getCatImage(p.category)}" alt="${p.category}" style="width:100%; height:100%; object-fit:cover;" />
+      </div>
+      <div class="product-info">
+        <div class="product-brand">${p.brand}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-footer">
+          <div class="price-group">
+            <span class="price-now">${p.price.toLocaleString('fr-FR')} FCFA</span>
+          </div>
+          <button class="add-btn" onclick="addToCart(${p.id})" title="Ajouter">+</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderProductsj() {
+  const grid = document.getElementById('productsj-grid');
+  const filtered = currentCategory ? productsj.filter(pj => pj.category === currentCategory) : productsj;
+  grid.innerHTML = filtered.map(pj => {
+    const imgSrc = pj.image || getCatImage(pj.category);
+    const src = Array.isArray(imgSrc) ? imgSrc[pj.id % imgSrc.length] : imgSrc;
+    return `
+    <div class="product-card">
+      <div class="product-img" style="background:${pj.color}">
+        <img src="${src}" alt="${pj.category}" style="width:100%; height:100%; object-fit:cover;" />
+      </div>
+      <div class="product-info">
+        <div class="product-brand">${pj.brand}</div>
+        <div class="product-name">${pj.name}</div>
+        <div class="product-footer">
+          <div class="price-group">
+            <span class="price-now">${pj.price.toLocaleString('fr-FR')} ${pj.devis}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterCategory(cat) {
+  currentCategory = (currentCategory === cat) ? null : cat;
+  document.getElementById('cat-filter-label').textContent  = currentCategory ? `Filtré: ${currentCategory} ✕` : 'Toutes catégories';
+  document.getElementById('cat-filter-labelj').textContent = currentCategory ? `Filtré: ${currentCategory} ✕` : 'Toutes catégories';
+  renderProducts();
+  renderProductsj();
+}
+
+function addToCart(id) {
+  const p = products.find(x => x.id === id);
+  const existing = cart.find(x => x.id === id);
+  if (existing) existing.qty++;
+  else cart.push({ ...p, qty: 1 });
+  saveCart(); updateCartUI(); showToast(`${p.name.slice(0,25)}… ajouté !`);
+}
+
+function updateCartUI() {
+  const total  = cart.reduce((s, x) => s + x.qty, 0);
+ // Dans updateCartUI()
+const amount = cart.reduce((s, x) => {
+  const prix = typeof x.price === 'string'
+    ? parseInt(x.price.replace(/\s/g, ''))
+    : x.price;
+  return s + prix * x.qty;
+}, 0);
+  document.getElementById('cart-count').textContent = total;
+  document.getElementById('cart-total').textContent = amount.toLocaleString('fr-FR') + ' FCFA';
+
+  const el = document.getElementById('cart-items');
+  if (!cart.length) {
+    el.innerHTML = `<div class="cart-empty"><div style="font-size:2.5rem;margin-bottom:1rem">🛒</div><p style="font-size:0.9rem">Votre panier est vide</p></div>`;
+    return;
+  }
+  el.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-img" style="background:${item.color};display:flex;align-items:center;justify-content:center;">
+        <img src="${getCatImage(item.category)}" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">
+      </div>
+      <div class="cart-item-info">
+        <div class="cart-item-brand">${item.brand}</div>
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-footer">
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+            <span class="qty-num">${item.qty}</span>
+            <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+          </div>
+          <span class="cart-item-price">${(item.price * item.qty).toLocaleString('fr-FR')} FCFA</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function changeQty(id, delta) {
+  const idx = cart.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) cart.splice(idx, 1);
+  saveCart(); updateCartUI();
+}
+
+function openCart()  {
+  document.getElementById('cart-overlay').classList.add('open');
+  document.getElementById('cart-drawer').classList.add('open');
+}
+function closeCart() {
+  document.getElementById('cart-overlay').classList.remove('open');
+  document.getElementById('cart-drawer').classList.remove('open');
+}
+
+async function checkout() {
+  if (!cart.length) { showToast('Votre panier est vide !'); return; }
+  // Dans checkout()
+const amount = cart.reduce((s, x) => {
+  const prix = typeof x.price === 'string' 
+    ? parseInt(x.price.replace(/\s/g, '')) 
+    : x.price;
+  return s + prix * x.qty;
+}, 0);
+  const cartData = encodeURIComponent(JSON.stringify(cart));
+  cart = []; saveCart(); updateCartUI(); closeCart();
+  window.location.href = `paie.html?amount=${amount}&cart=${cartData}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✓ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+renderProducts();
+renderProductsj();
+updateCartUI();
+</script>
+</body>
+</html>
